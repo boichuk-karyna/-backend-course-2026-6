@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1777271120894",
+    "inventory_name": "New Name",
+    "description": "Updated",
+    "photo": "d594b902ec2c75fa8444c8121609b004"
+  },
+  {
+    "id": "1777271477205",
+    "inventory_name": "New Chair",
+    "description": "Updated",
+    "photo": "3385b85a817ed42ae1ebf79275f9c21d"
+  },
+  {
+    "id": "1777272072781",
+    "inventory_name": "chair",
+    "description": "test",
+    "photo": "d9ff38c7d91bd7e71ce2a506e76e2f0e"
+  }
+]
