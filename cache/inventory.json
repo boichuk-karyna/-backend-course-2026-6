@@ -16,5 +16,17 @@
     "inventory_name": "chair",
     "description": "test",
     "photo": "d9ff38c7d91bd7e71ce2a506e76e2f0e"
+  },
+  {
+    "id": "1777274547402",
+    "inventory_name": "Karyna",
+    "description": "sdfc",
+    "photo": "b5af60b24e495fa27a2f32db7da94ab9"
+  },
+  {
+    "id": "1777274609083",
+    "inventory_name": "inventory_name",
+    "description": "description",
+    "photo": "217d1a9724dfba118c531f6c6917c411"
   }
 ]
