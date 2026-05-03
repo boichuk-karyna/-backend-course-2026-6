@@ -28,5 +28,35 @@
     "inventory_name": "inventory_name",
     "description": "description",
     "photo": "217d1a9724dfba118c531f6c6917c411"
+  },
+  {
+    "id": "1777292959593",
+    "inventory_name": "chair",
+    "description": "string",
+    "photo": "9c4207c9d7ca4d48624bbfb97bbff627"
+  },
+  {
+    "id": "1777293237782",
+    "inventory_name": "string",
+    "description": "string",
+    "photo": "907016542f2859c6652d8ccaf7f85c22"
+  },
+  {
+    "id": "1777293324760",
+    "inventory_name": "string",
+    "description": "string",
+    "photo": "faffa8e62e929cbdda4cbc2d8bec6a75"
+  },
+  {
+    "id": "1777294501227",
+    "inventory_name": "chair",
+    "description": "",
+    "photo": "b4c138468aeddfcfa50d885e9908376b"
+  },
+  {
+    "id": "1777814214234",
+    "inventory_name": "string",
+    "description": "string",
+    "photo": "95acb869b63bb410421259f597a6900d"
   }
 ]

@@ -4,13 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const http = require('http');
-
-
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 program
-  .requiredOption('-h, --host <host>', 'адреса сервера')
+  .requiredOption('-H, --host <host>', 'адреса сервера')
   .requiredOption('-p, --port <port>', 'порт сервера')
   .requiredOption('-c, --cache <cache>', 'шлях до директорії кеша');
 
@@ -41,7 +39,7 @@ const swaggerOptions = {
     info: {
       title: 'Inventory API',
       version: '1.0.0',
-      description: 'API для управління інвентарем'
+      description: 'API для керування інвентарем (лабораторна робота)'
     },
     servers: [
       {
@@ -49,35 +47,53 @@ const swaggerOptions = {
       }
     ]
   },
-  apis: ['./main.js'] 
+  apis: [path.resolve(__filename)]
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-
-
+/**
+ * @openapi
+ * /RegisterForm.html:
+ *   get:
+ *     summary: Отримати HTML форму реєстрації
+ *     tags: [Pages]
+ *     responses:
+ *       200:
+ *         description: HTML сторінка
+ */
 app.get('/RegisterForm.html', (req, res) =>
   res.sendFile(path.join(__dirname, 'RegisterForm.html'))
 );
 
+/**
+ * @openapi
+ * /SearchForm.html:
+ *   get:
+ *     summary: Отримати HTML форму пошуку
+ *     tags: [Pages]
+ *     responses:
+ *       200:
+ *         description: HTML сторінка
+ */
 app.get('/SearchForm.html', (req, res) =>
   res.sendFile(path.join(__dirname, 'SearchForm.html'))
 );
 
 /**
- * @swagger
+ * @openapi
  * /register:
  *   post:
- *     summary: Створити інвентар
+ *     summary: Реєстрація нового предмета
+ *     tags: [Actions]
  *     requestBody:
  *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - inventory_name
+ *             required: [inventory_name]
  *             properties:
  *               inventory_name:
  *                 type: string
@@ -88,7 +104,12 @@ app.get('/SearchForm.html', (req, res) =>
  *                 format: binary
  *     responses:
  *       201:
- *         description: Created
+ *         description: Предмет успішно створено
+ *       400:
+ *         description: Відсутній inventory_name
+ *   x-other-methods:
+ *     405:
+ *       description: Method not allowed
  */
 app.post('/register', upload.single('photo'), (req, res) => {
   const { inventory_name, description } = req.body;
@@ -110,16 +131,20 @@ app.post('/register', upload.single('photo'), (req, res) => {
 app.all('/register', (req, res) => res.status(405).send('Method not allowed'));
 
 /**
- * @swagger
+ * @openapi
  * /inventory:
  *   get:
- *     summary: Отримати всі записи
+ *     summary: Отримати весь список інвентарю
+ *     tags: [Inventory]
  *     responses:
  *       200:
- *         description: OK
+ *         description: Масив об'єктів інвентарю
+ *   x-other-methods:
+ *     405:
+ *       description: Method not allowed
  */
 app.get('/inventory', (req, res) => {
-  const list = inventoryDB.map(item => ({
+  const list = inventoryDB.map((item) => ({
     ...item,
     photoUrl: item.photo
       ? `http://${options.host}:${options.port}/inventory/${item.id}/photo`
@@ -130,22 +155,66 @@ app.get('/inventory', (req, res) => {
 app.all('/inventory', (req, res) => res.status(405).send('Method not allowed'));
 
 /**
- * @swagger
+ * @openapi
  * /inventory/{id}:
  *   get:
- *     summary: Отримати по ID
+ *     summary: Отримати предмет за ID
+ *     tags: [Inventory]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: OK
+ *         description: Предмет знайдено
  *       404:
- *         description: Not found
+ *         description: Не знайдено
+ *   put:
+ *     summary: Оновити дані предмета
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               inventory_name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Оновлено
+ *       404:
+ *         description: Не знайдено
+ *   delete:
+ *     summary: Видалити предмет
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Видалено
+ *       404:
+ *         description: Не знайдено
+ *   x-other-methods:
+ *     405:
+ *       description: Method not allowed
  */
 app.get('/inventory/:id', (req, res) => {
-  const item = inventoryDB.find(i => i.id === req.params.id);
+  const item = inventoryDB.find((i) => i.id === req.params.id);
   if (!item) return res.status(404).send('Not found');
 
   res.status(200).json({
@@ -156,21 +225,8 @@ app.get('/inventory/:id', (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /inventory/{id}:
- *   put:
- *     summary: Оновити інвентар
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *     responses:
- *       200:
- *         description: Updated
- */
 app.put('/inventory/:id', (req, res) => {
-  const itemIndex = inventoryDB.findIndex(i => i.id === req.params.id);
+  const itemIndex = inventoryDB.findIndex((i) => i.id === req.params.id);
   if (itemIndex === -1) return res.status(404).send('Not found');
 
   const { inventory_name, description } = req.body;
@@ -181,21 +237,8 @@ app.put('/inventory/:id', (req, res) => {
   res.status(200).json(inventoryDB[itemIndex]);
 });
 
-/**
- * @swagger
- * /inventory/{id}:
- *   delete:
- *     summary: Видалити інвентар
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *     responses:
- *       200:
- *         description: Deleted
- */
 app.delete('/inventory/:id', (req, res) => {
-  const itemIndex = inventoryDB.findIndex(i => i.id === req.params.id);
+  const itemIndex = inventoryDB.findIndex((i) => i.id === req.params.id);
   if (itemIndex === -1) return res.status(404).send('Not found');
 
   const item = inventoryDB[itemIndex];
@@ -211,49 +254,117 @@ app.delete('/inventory/:id', (req, res) => {
 app.all('/inventory/:id', (req, res) => res.status(405).send('Method not allowed'));
 
 /**
- * @swagger
+ * @openapi
  * /inventory/{id}/photo:
  *   get:
- *     summary: Отримати фото
+ *     summary: Отримати фото предмета
+ *     tags: [Media]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: JPEG image
+ *       404:
+ *         description: Не знайдено
+ *   put:
+ *     summary: Оновити фото предмета
+ *     tags: [Media]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [photo]
+ *             properties:
+ *               photo:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Фото оновлено
+ *       400:
+ *         description: Фото не передано
+ *       404:
+ *         description: Не знайдено
+ *   x-other-methods:
+ *     405:
+ *       description: Method not allowed
  */
 app.get('/inventory/:id/photo', (req, res) => {
-  const item = inventoryDB.find(i => i.id === req.params.id);
+  const item = inventoryDB.find((i) => i.id === req.params.id);
   if (!item || !item.photo) return res.status(404).send('Not found');
 
   const photoPath = path.join(cacheDir, item.photo);
   if (!fs.existsSync(photoPath)) return res.status(404).send('Not found');
 
   res.setHeader('Content-Type', 'image/jpeg');
-  res.sendFile(photoPath);
+  res.sendFile(photoPath, { dotfiles: 'allow' });
 });
 
+app.put('/inventory/:id/photo', upload.single('photo'), (req, res) => {
+  const itemIndex = inventoryDB.findIndex((i) => i.id === req.params.id);
+  if (itemIndex === -1) return res.status(404).send('Not found');
+  if (!req.file) return res.status(400).send('Bad Request: photo is required');
+
+  const oldPhoto = inventoryDB[itemIndex].photo;
+  if (oldPhoto) {
+    const oldPath = path.join(cacheDir, oldPhoto);
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  inventoryDB[itemIndex].photo = req.file.filename;
+  saveDB();
+  res.status(200).send('Photo updated');
+});
+app.all('/inventory/:id/photo', (req, res) =>
+  res.status(405).send('Method not allowed')
+);
+
 /**
- * @swagger
+ * @openapi
  * /search:
  *   post:
- *     summary: Пошук
+ *     summary: Пошук предмета
+ *     tags: [Actions]
  *     requestBody:
  *       required: true
  *       content:
  *         application/x-www-form-urlencoded:
  *           schema:
  *             type: object
+ *             required: [id]
  *             properties:
  *               id:
  *                 type: string
  *               has_photo:
  *                 type: string
+ *                 description: Передайте значення on, щоб додати URL фото в опис
+ *     responses:
+ *       200:
+ *         description: Предмет знайдено
+ *       404:
+ *         description: Не знайдено
+ *   x-other-methods:
+ *     405:
+ *       description: Method not allowed
  */
 app.post('/search', (req, res) => {
   const { id, has_photo } = req.body;
-  const item = inventoryDB.find(i => i.id === id);
+  const item = inventoryDB.find((i) => i.id === id);
   if (!item) return res.status(404).send('Not found');
 
-  let responseData = { ...item };
+  const responseData = { ...item };
   if (has_photo === 'on' && item.photo) {
     responseData.description += ` (Photo URL: http://${options.host}:${options.port}/inventory/${item.id}/photo)`;
   }
@@ -262,9 +373,9 @@ app.post('/search', (req, res) => {
 });
 app.all('/search', (req, res) => res.status(405).send('Method not allowed'));
 
-
 const server = http.createServer(app);
 server.listen(options.port, options.host, () => {
-  console.log(`Server: http://${options.host}:${options.port}`);
-  console.log(`Swagger: http://${options.host}:${options.port}/api-docs`);
+  console.log(`Server is running at http://${options.host}:${options.port}`);
+  console.log(`Cache directory: ${cacheDir}`);
+  console.log(`Swagger: http://${options.host}:${options.port}/docs`);
 });
